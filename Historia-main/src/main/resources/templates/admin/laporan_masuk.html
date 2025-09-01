@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/_layout :: layout(~{::main}, 'Laporan Masuk', 'laporan')}">
+<body>
+<main>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h2 fw-bold">Dashboard Admin</h1>
+      <p class="text-muted mb-0">Laporan Situs Baru</p>
+    </div>
+  </div>
+
+  <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+    <span th:text="${successMessage}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-4">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+          <tr class="table-light">
+            <th>NAMA SITUS</th>
+            <th>LOKASI</th>
+            <th>TAHUN</th>
+            <th>NAMA PELAPOR</th>
+            <th>DESKRIPSI SINGKAT</th>
+            <th class="text-center">AKSI</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="laporan : ${laporanList}">
+            <td class="fw-medium" th:text="${laporan.namaSitus}">Situs X</td>
+            <td th:text="${laporan.lokasiText}">Prov X, Kab Y</td>
+            <td th:text="${laporan.tahunDitemukan}">-</td>
+            <td th:text="${laporan.namaPelapor}">Pelapor</td>
+            <td th:text="${#strings.abbreviate(laporan.deskripsiSingkat, 40)}">Deskripsi…</td>
+            <td class="text-center">
+              <a class="btn btn-secondary btn-sm px-3 me-1"
+                 th:href="@{/admin/laporan/{id}(id=${laporan.laporanId})}">Lihat</a>
+              <form th:action="@{/admin/laporan/validasi/{id}(id=${laporan.laporanId})}" method="post" class="d-inline">
+                <button type="submit" class="btn btn-primary btn-sm px-3">Validasi</button>
+              </form>
+              <form th:action="@{/admin/laporan/tolak/{id}(id=${laporan.laporanId})}" method="post" class="d-inline">
+                <button type="submit" class="btn btn-danger btn-sm px-3">Tolak</button>
+              </form>
+            </td>
+          </tr>
+          <tr th:if="${#lists.isEmpty(laporanList)}">
+            <td colspan="6" class="text-center text-muted p-5">Tidak ada laporan baru.</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+</body>
+</html>

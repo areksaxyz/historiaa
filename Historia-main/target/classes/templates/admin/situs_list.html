@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/_layout :: layout(~{::main}, 'Kelola Situs', 'situs')}">
+<body>
+<main>
+  <h1 class="fw-bold mb-3">Dashboard Admin</h1>
+  <h4 class="mb-4">Kelola Situs</h4>
+
+  <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+    <span th:text="${successMessage}">Berhasil.</span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+
+  <div class="mb-3">
+    <a class="btn btn-success" th:href="@{/admin/situs/add}">
+      <i class="bi bi-plus-lg me-1"></i>Tambah Situs Baru
+    </a>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+          <tr>
+            <th>Nama Situs</th>
+            <th>Lokasi</th>
+            <th>Tanggal</th>
+            <th>Kondisi</th>
+            <th>Maps</th>
+            <th class="text-end">Aksi</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="s : ${list}">
+            <td class="fw-medium" th:text="${s.namaSitus}">Nama</td>
+            <td>
+              <span th:text="${s.kecamatan != null ? s.kecamatan.namaKecamatan : ''}"></span>
+              <span th:if="${s.kecamatan != null}">, </span>
+              <span th:text="${s.kabupaten != null ? s.kabupaten.namaKabupaten : ''}"></span>
+            </td>
+            <td th:text="${s.tahunDitemukan}">yyyy-MM-dd</td>
+            <td th:text="${s.kondisi}">-</td>
+            <td>
+              <a th:if="${s.mapsUrl != null and !#strings.isEmpty(s.mapsUrl)}"
+                 class="btn btn-sm btn-primary"
+                 th:href="${s.mapsUrl}" target="_blank">Buka Maps</a>
+              <a th:if="${s.mapsUrl == null or #strings.isEmpty(s.mapsUrl)}"
+                 class="btn btn-sm btn-outline-secondary"
+                 th:href="@{https://www.google.com/maps/search/ (q=${s.namaSitus})}"
+                 target="_blank">Cari di Maps</a>
+            </td>
+            <td class="text-end">
+              <a class="btn btn-sm btn-warning me-1"
+                 th:href="@{/admin/situs/edit/{id}(id=${s.situsId})}">Edit</a>
+              <form th:action="@{/admin/situs/delete/{id}(id=${s.situsId})}"
+                    method="post" class="d-inline"
+                    onsubmit="return confirm('Hapus data ini?');">
+                <button class="btn btn-sm btn-danger">Hapus</button>
+              </form>
+            </td>c
+          </tr>
+          <tr th:if="${#lists.isEmpty(list)}">
+            <td colspan="6" class="text-center text-muted py-5">Belum ada data.</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+</body>
+</html>

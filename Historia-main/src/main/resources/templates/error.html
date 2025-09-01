@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><title>Error</title></head>
+<body>
+<h2>Terjadi kesalahan</h2>
+<p th:text="${message} ?: 'Silakan coba lagi.'"></p>
+<a th:href="@{/}">Kembali ke beranda</a>
+</body>
+</html>

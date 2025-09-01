@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/_layout :: layout(~{::main}, ${pageTitle} ?: 'Form Situs', 'situs')}">
+<body>
+<main>
+  <h1 class="fw-bold mb-3">Dashboard Admin</h1>
+  <h4 class="mb-4" th:text="${pageTitle} ?: 'Form Situs'">Form Situs</h4>
+
+  <div class="card">
+    <div class="card-body">
+      <form th:action="@{/admin/situs/save}" method="post" th:object="${dto}" enctype="multipart/form-data">
+        <input type="hidden" th:field="*{situsId}"/>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Nama Situs</label>
+            <input class="form-control" th:field="*{namaSitus}" required>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Tanggal Ditemukan</label>
+            <input class="form-control" type="date" th:field="*{tanggalDitemukan}" placeholder="yyyy-mm-dd">
+            <div class="form-text">Pilih tanggal melalui kalender.</div>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Provinsi</label>
+            <select id="provinsi" class="form-select" th:field="*{provinsiId}">
+              <option value="">-- Pilih Provinsi --</option>
+              <option th:each="p : ${provinsiList}" th:value="${p.provinsiId}" th:text="${p.namaProvinsi}"></option>
+            </select>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Kabupaten</label>
+            <select id="kabupaten" class="form-select" th:field="*{kabupatenId}" th:attr="data-current-id=${dto.kabupatenId}">
+              <option value="">-- Pilih Kabupaten --</option>
+            </select>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Kecamatan</label>
+            <select id="kecamatan" class="form-select" th:field="*{kecamatanId}" th:attr="data-current-id=${dto.kecamatanId}">
+              <option value="">-- Pilih Kecamatan --</option>
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Latitude</label>
+            <input class="form-control" type="number" step="0.00000001" th:field="*{lat}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Longitude</label>
+            <input class="form-control" type="number" step="0.00000001" th:field="*{lon}">
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">Google Maps Link</label>
+            <input class="form-control" th:field="*{mapsUrl}" placeholder="https://maps.app.goo.gl/...">
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Foto (galeri/komputer)</label>
+            <input class="form-control" type="file" name="fileFoto" accept="image/*">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">atau Foto URL</label>
+            <input class="form-control" th:field="*{fotoUrl}">
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">Deskripsi</label>
+            <textarea class="form-control" rows="4" th:field="*{deskripsi}"></textarea>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">Kondisi</label>
+            <select class="form-select" th:field="*{kondisi}">
+              <option value="">-- Pilih Kondisi --</option>
+              <option value="Sangat Baik">Sangat Baik</option>
+              <option value="Baik">Baik</option>
+              <option value="Cukup Baik">Cukup Baik</option>
+              <option value="Tidak Baik">Tidak Baik</option>
+              <option value="Sangat Tidak Baik">Sangat Tidak Baik</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+          <button class="btn btn-primary">Simpan</button>
+          <a th:href="@{/admin/situs}" class="btn btn-outline-secondary">Batal</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- AJAX dropdown lokasi (wajib di dalam <main>) -->
+  <script th:inline="javascript">
+    const API_KAB_PATH = /*[[@{/api/lokasi/kabupaten/}]]*/ '/api/lokasi/kabupaten/';
+    const API_KEC_PATH = /*[[@{/api/lokasi/kecamatan/}]]*/ '/api/lokasi/kecamatan/';
+    const API_KAB_Q    = /*[[@{/api/lokasi/kabupaten}]]*/ '/api/lokasi/kabupaten';
+    const API_KEC_Q    = /*[[@{/api/lokasi/kecamatan}]]*/ '/api/lokasi/kecamatan';
+
+    const provSel = document.getElementById('provinsi')
+                   || document.getElementById('provinsiId')
+                   || document.querySelector('select[name$="provinsiId"]');
+    const kabSel  = document.getElementById('kabupaten')
+                   || document.getElementById('kabupatenId')
+                   || document.querySelector('select[name$="kabupatenId"]');
+    const kecSel  = document.getElementById('kecamatan')
+                   || document.getElementById('kecamatanId')
+                   || document.querySelector('select[name$="kecamatanId"]');
+
+    function reset(el, placeholder){ if(!el) return; el.innerHTML=''; el.append(new Option(placeholder, '')); }
+    function valOrNull(v){ if(v==null) return null; const s=String(v).trim(); return (s===''||s.toLowerCase()==='null')?null:s; }
+
+    async function jget(url){
+      try{
+        const r = await fetch(url,{headers:{'Accept':'application/json'}});
+        if(!r.ok){ console.error('HTTP', r.status, url); return []; }
+        return await r.json();
+      }catch(e){ console.error('AJAX', url, e); return []; }
+    }
+
+    async function loadKabupaten(provId, preselectKabId){
+      reset(kabSel,'-- Pilih Kabupaten --'); reset(kecSel,'-- Pilih Kecamatan --');
+      if(!provId) return;
+      let data = await jget(API_KAB_PATH + encodeURIComponent(provId));
+      if(!Array.isArray(data) || data.length===0){
+        data = await jget(`${API_KAB_Q}?provinsiId=${encodeURIComponent(provId)}`);
+      }
+      data.forEach(k => kabSel.append(new Option(k.namaKabupaten, k.kabupatenId)));
+      if(preselectKabId){ kabSel.value = String(preselectKabId); }
+    }
+
+    async function loadKecamatan(kabId, preselectKecId){
+      reset(kecSel,'-- Pilih Kecamatan --');
+      if(!kabId) return;
+      let data = await jget(API_KEC_PATH + encodeURIComponent(kabId));
+      if(!Array.isArray(data) || data.length===0){
+        data = await jget(`${API_KEC_Q}?kabupatenId=${encodeURIComponent(kabId)}`);
+      }
+      data.forEach(k => kecSel.append(new Option(k.namaKecamatan, k.kecamatanId)));
+      if(preselectKecId){ kecSel.value = String(preselectKecId); }
+    }
+
+    async function onProvChange(){ await loadKabupaten(provSel.value, null); }
+    async function onKabChange(){ await loadKecamatan(kabSel.value, null); }
+
+    provSel && provSel.addEventListener('change', onProvChange);
+    kabSel  && kabSel.addEventListener('change', onKabChange);
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const curProv = provSel ? valOrNull(provSel.value) : null;
+      const curKab  = kabSel  ? valOrNull(kabSel.getAttribute('data-current-id')) : null;
+      const curKec  = kecSel  ? valOrNull(kecSel.getAttribute('data-current-id')) : null;
+
+      if(curProv){ await loadKabupaten(curProv, curKab); }
+      const kabId = (kabSel && kabSel.value) || curKab;
+      if(kabId){ await loadKecamatan(kabId, curKec); }
+    });
+  </script>
+</main>
+</body>
+</html>
